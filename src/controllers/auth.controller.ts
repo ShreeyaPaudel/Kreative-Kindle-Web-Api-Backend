@@ -1,3 +1,5 @@
+// src/controllers/auth.controller.ts
+
 import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
@@ -10,20 +12,33 @@ export const register = async (req: Request, res: Response) => {
     return res.status(400).json(parsed.error);
   }
 
-  const existing = await UserModel.findOne({ email: parsed.data.email });
-  if (existing) {
-    return res.status(400).json({ message: "Email already exists" });
+  try {
+    const existing = await UserModel.findOne({ email: parsed.data.email });
+    if (existing) {
+      return res.status(400).json({ message: "Email already exists" });
+    }
+
+    const hashed = await bcrypt.hash(parsed.data.password, 10);
+
+    const user = await UserModel.create({
+      email: parsed.data.email,
+      username: parsed.data.username,
+      password: hashed,
+      role: "user",
+    });
+
+    return res.status(201).json({
+      message: "User registered",
+      user: {
+        id: user._id,
+        email: user.email,
+        username: user.username,
+        role: user.role,
+      },
+    });
+  } catch (err: any) {
+    return res.status(500).json({ message: "Internal Server Error" });
   }
-
-  const hashed = await bcrypt.hash(parsed.data.password, 10);
-
-  const user = await UserModel.create({
-    email: parsed.data.email,
-    password: hashed,
-    role: "user",
-  });
-
-  res.status(201).json({ message: "User registered", user });
 };
 
 export const login = async (req: Request, res: Response) => {
@@ -32,21 +47,34 @@ export const login = async (req: Request, res: Response) => {
     return res.status(400).json(parsed.error);
   }
 
-  const user = await UserModel.findOne({ email: parsed.data.email });
-  if (!user) {
-    return res.status(404).json({ message: "User not found" });
+  try {
+    const user = await UserModel.findOne({ email: parsed.data.email });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const match = await bcrypt.compare(parsed.data.password, user.password);
+    if (!match) {
+      return res.status(401).json({ message: "Invalid password" });
+    }
+
+    const token = jwt.sign(
+      { id: user._id, role: user.role },
+      process.env.JWT_SECRET as string,
+      { expiresIn: "1d" }
+    );
+
+    return res.json({
+      message: "Login successful",
+      token,
+      user: {
+        id: user._id,
+        email: user.email,
+        username: user.username,
+        role: user.role,
+      },
+    });
+  } catch (err: any) {
+    return res.status(500).json({ message: "Internal Server Error" });
   }
-
-  const match = await bcrypt.compare(parsed.data.password, user.password);
-  if (!match) {
-    return res.status(401).json({ message: "Invalid password" });
-  }
-
-  const token = jwt.sign(
-    { id: user._id, role: user.role },
-    process.env.JWT_SECRET as string,
-    { expiresIn: "1d" }
-  );
-
-  res.json({ message: "Login successful", token });
 };
