@@ -10,7 +10,7 @@ const userSchema = new mongoose.Schema(
 
     username: {
       type: String,
-      required: true,   // ✅ REQUIRED
+      required: true, // ✅ REQUIRED
       unique: true,
     },
 
@@ -19,11 +19,17 @@ const userSchema = new mongoose.Schema(
       required: true,
     },
 
-   role: {
-  type: String,
-  enum: ["parent", "instructor", "admin"],
-  default: "parent",
-},
+    role: {
+      type: String,
+      enum: ["parent", "instructor", "admin"],
+      default: "parent",
+    },
+
+    // ✅ OPTIONAL user image (safe for Flutter - additive)
+    image: {
+      type: String,
+      default: "",
+    },
   },
   { timestamps: true }
 );
