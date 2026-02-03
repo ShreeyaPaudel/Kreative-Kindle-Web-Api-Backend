@@ -3,6 +3,13 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { UserModel } from "../models/users/user.model";
 import { registerDTO, loginDTO } from "../dtos/auth.dto";
+import { AuthRequest } from "../middlewares/auth.middleware";
+
+const makeImageUrl = (req: Request, filename?: string) => {
+  if (!filename) return "";
+  const baseUrl = `${req.protocol}://${req.get("host")}`;
+  return `${baseUrl}/uploads/users/${filename}`;
+};
 
 export const register = async (req: Request, res: Response) => {
   const parsed = registerDTO.safeParse(req.body);
@@ -35,10 +42,10 @@ export const register = async (req: Request, res: Response) => {
         email: user.email,
         username: user.username,
         role: user.role,
+        image: user.image ?? "",
       },
     });
   } catch (err: any) {
-    // ✅ THIS will show the real reason in terminal
     console.log("REGISTER ERROR =>", err);
 
     return res.status(500).json({
@@ -77,10 +84,49 @@ export const login = async (req: Request, res: Response) => {
         email: user.email,
         username: user.username,
         role: user.role,
+        image: user.image ?? "",
       },
     });
   } catch (err: any) {
     console.log("LOGIN ERROR =>", err);
+    return res.status(500).json({ message: err?.message || "Internal Server Error" });
+  }
+};
+
+// ✅ PUT /api/auth/:id (Multer optional, Flutter safe)
+export const updateUserProfile = async (req: AuthRequest, res: Response) => {
+  try {
+    const paramId = req.params.id;
+    const loggedIn = req.user;
+
+    if (!loggedIn) return res.status(401).json({ message: "Unauthorized" });
+
+    // ✅ user updates own profile; admin can update anyone
+    if (loggedIn.id !== paramId && loggedIn.role !== "admin") {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
+    const { email, username, password } = req.body;
+
+    const update: any = {};
+    if (email) update.email = email;
+    if (username) update.username = username;
+
+    if (password) update.password = await bcrypt.hash(password, 10);
+
+    if ((req as any).file) {
+      update.image = makeImageUrl(req as any, (req as any).file.filename);
+    }
+
+    const user = await UserModel.findByIdAndUpdate(paramId, update, { new: true }).select(
+      "-password"
+    );
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    return res.json({ message: "Profile updated", user });
+  } catch (err: any) {
+    console.log("UPDATE PROFILE ERROR =>", err);
     return res.status(500).json({ message: err?.message || "Internal Server Error" });
   }
 };
