@@ -19,8 +19,14 @@ router.use(requireAuth, adminOnly);
 // POST /api/admin/users
 router.post("/users", userImageUpload, createUserAdmin);
 
-// GET /api/admin/users
+// // GET /api/admin/users
 router.get("/users", getUsersAdmin);
+
+// router.get("/users", (req, res, next) => {
+//   console.log("🔥 BEFORE CONTROLLER", req.query);
+//   next();
+// }, getUsersAdmin);
+
 
 // GET /api/admin/users/:id
 router.get("/users/:id", getUserByIdAdmin);

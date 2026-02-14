@@ -60,7 +60,8 @@ export const createUserAdmin = async (req: Request, res: Response) => {
 
 // ✅ GET /api/admin/users?page=1&limit=10
 export const getUsersAdmin = async (req: Request, res: Response) => {
-    console.log("🔥 HIT getUsersAdmin", req.originalUrl);
+    console.log("✅ INSIDE getUsersAdmin", req.query);
+
   try {
    
 
@@ -82,6 +83,9 @@ export const getUsersAdmin = async (req: Request, res: Response) => {
 
     const totalPages = Math.ceil(total / limit);
 
+
+
+
     return res.json({
       users, // ✅ keep existing key so frontend doesn’t break
       meta: {
@@ -91,6 +95,7 @@ export const getUsersAdmin = async (req: Request, res: Response) => {
         totalPages,
         hasNextPage: page < totalPages,
         hasPrevPage: page > 1,
+       
       },
     });
   } catch (err: any) {
