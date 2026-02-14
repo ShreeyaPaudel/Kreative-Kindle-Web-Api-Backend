@@ -5,6 +5,11 @@ import { UserModel } from "../models/users/user.model";
 import { registerDTO, loginDTO } from "../dtos/auth.dto";
 import { AuthRequest } from "../middlewares/auth.middleware";
 
+
+import crypto from "crypto";
+
+
+
 const makeImageUrl = (req: Request, filename?: string) => {
   if (!filename) return "";
   const baseUrl = `${req.protocol}://${req.get("host")}`;
@@ -133,4 +138,78 @@ export const updateUserProfile = async (req: AuthRequest, res: Response) => {
     console.log("UPDATE PROFILE ERROR =>", err);
     return res.status(500).json({ message: err?.message || "Internal Server Error" });
   }
+
+  
+
+
 };
+
+// ✅ POST /api/auth/forgot-password
+export const forgotPassword = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+
+    const genericMsg = "If that email exists, a reset link has been sent.";
+
+    if (!email) return res.status(400).json({ message: "Email is required" });
+
+    const user = await UserModel.findOne({ email });
+
+    // If user not found, still respond OK (security)
+    if (!user) return res.json({ message: genericMsg });
+
+    // Create raw token (send to user)
+    const rawToken = crypto.randomBytes(32).toString("hex");
+
+    // Store hashed token in DB
+    const hashedToken = crypto.createHash("sha256").update(rawToken).digest("hex");
+
+    user.resetPasswordToken = hashedToken;
+    user.resetPasswordExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+    await user.save();
+
+    // ✅ Demo link for your video/Postman (later you can send email)
+    const resetLink = `http://localhost:3000/reset-password?token=${rawToken}`;
+
+    return res.json({
+      message: genericMsg,
+      resetLink,
+    });
+  } catch (err: any) {
+    console.log("FORGOT PASSWORD ERROR =>", err);
+    return res.status(500).json({ message: err?.message || "Internal Server Error" });
+  }
+};
+
+
+// ✅ POST /api/auth/reset-password
+export const resetPassword = async (req: Request, res: Response) => {
+  try {
+    const { token, password } = req.body;
+
+    if (!token || !password) {
+      return res.status(400).json({ message: "token and password are required" });
+    }
+
+    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+    const user = await UserModel.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpires: { $gt: new Date() },
+    });
+
+    if (!user) return res.status(400).json({ message: "Invalid or expired token" });
+
+    user.password = await bcrypt.hash(password, 10);
+    user.resetPasswordToken = null as any;
+    user.resetPasswordExpires = null as any;
+
+    await user.save();
+
+    return res.json({ message: "Password reset successful" });
+  } catch (err: any) {
+    console.log("RESET PASSWORD ERROR =>", err);
+    return res.status(500).json({ message: err?.message || "Internal Server Error" });
+  }
+};
+

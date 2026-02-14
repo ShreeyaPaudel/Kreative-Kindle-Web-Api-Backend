@@ -2,6 +2,8 @@ import { Router } from "express";
 import { register, login, updateUserProfile } from "../controllers/auth.controller";
 import { requireAuth } from "../middlewares/auth.middleware";
 import { userImageUpload } from "../middlewares/userUpload.middleware";
+import { forgotPassword, resetPassword } from "../controllers/auth.controller";
+
 
 import { createUserViaAuthAdmin } from "../controllers/admin/authUsers.controller";
 
@@ -9,6 +11,9 @@ const router = Router();
 
 router.post("/register", register);
 router.post("/login", login);
+router.post("/forgot-password", forgotPassword);
+router.post("/reset-password", resetPassword);
+
 
 // ✅ PUT /api/auth/:id  (profile update) - Multer optional
 router.put("/:id", requireAuth, userImageUpload, updateUserProfile);

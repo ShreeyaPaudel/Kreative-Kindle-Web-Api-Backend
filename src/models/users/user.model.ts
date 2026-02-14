@@ -12,7 +12,7 @@ const userSchema = new mongoose.Schema(
 
     username: {
       type: String,
-      required: true, // ✅ REQUIRED
+      required: true,
       unique: true,
     },
 
@@ -27,10 +27,21 @@ const userSchema = new mongoose.Schema(
       default: "parent",
     },
 
-    // ✅ OPTIONAL user image (safe for Flutter - additive)
+    // ✅ OPTIONAL user image
     image: {
       type: String,
       default: "",
+    },
+
+    // ✅ Forgot / Reset Password Fields
+    resetPasswordToken: {
+      type: String,
+      default: null,
+    },
+
+    resetPasswordExpires: {
+      type: Date,
+      default: null,
     },
   },
   { timestamps: true }
