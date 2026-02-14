@@ -2,6 +2,10 @@ import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import { UserModel } from "../../models/users/user.model";
 
+/**
+ * Builds full image URL for saved user images
+ * Example: http://localhost:3001/uploads/users/<filename>
+ */
 const makeImageUrl = (req: Request, filename?: string) => {
   if (!filename) return "";
   const baseUrl = `${req.protocol}://${req.get("host")}`;
@@ -14,7 +18,9 @@ export const createUserAdmin = async (req: Request, res: Response) => {
     const { email, username, password, role } = req.body;
 
     if (!email || !username || !password) {
-      return res.status(400).json({ message: "email, username, password are required" });
+      return res
+        .status(400)
+        .json({ message: "email, username, password are required" });
     }
 
     const existingEmail = await UserModel.findOne({ email });
@@ -25,7 +31,8 @@ export const createUserAdmin = async (req: Request, res: Response) => {
 
     const hashed = await bcrypt.hash(password, 10);
 
-    const imageUrl = (req as any).file ? makeImageUrl(req, (req as any).file.filename) : "";
+    const imageUrl =
+      (req as any).file ? makeImageUrl(req, (req as any).file.filename) : "";
 
     const user = await UserModel.create({
       email,
@@ -51,10 +58,12 @@ export const createUserAdmin = async (req: Request, res: Response) => {
   }
 };
 
-
 // ✅ GET /api/admin/users?page=1&limit=10
 export const getUsersAdmin = async (req: Request, res: Response) => {
+    console.log("🔥 HIT getUsersAdmin", req.originalUrl);
   try {
+   
+
     const page = Math.max(parseInt((req.query.page as string) || "1", 10), 1);
 
     const limitRaw = parseInt((req.query.limit as string) || "10", 10);
@@ -74,7 +83,7 @@ export const getUsersAdmin = async (req: Request, res: Response) => {
     const totalPages = Math.ceil(total / limit);
 
     return res.json({
-      users, // ✅ keep existing key so your frontend doesn’t break
+      users, // ✅ keep existing key so frontend doesn’t break
       meta: {
         page,
         limit,
@@ -89,7 +98,6 @@ export const getUsersAdmin = async (req: Request, res: Response) => {
     return res.status(500).json({ message: err?.message || "Internal Server Error" });
   }
 };
-
 
 // ✅ GET /api/admin/users/:id
 export const getUserByIdAdmin = async (req: Request, res: Response) => {
@@ -108,7 +116,7 @@ export const updateUserAdmin = async (req: Request, res: Response) => {
   try {
     const { email, username, password, role } = req.body;
 
-    const update: any = {};
+    const update: Record<string, any> = {};
     if (email) update.email = email;
     if (username) update.username = username;
     if (role) update.role = role;

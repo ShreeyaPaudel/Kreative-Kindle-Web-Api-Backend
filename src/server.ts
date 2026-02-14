@@ -20,6 +20,12 @@ app.use(
 
 app.use(express.json());
 
+app.use((req, _res, next) => {
+  console.log("➡️", req.method, req.originalUrl);
+  next();
+});
+
+
 // ✅ Serve uploads
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
