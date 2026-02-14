@@ -51,16 +51,45 @@ export const createUserAdmin = async (req: Request, res: Response) => {
   }
 };
 
-// ✅ GET /api/admin/users
-export const getUsersAdmin = async (_req: Request, res: Response) => {
+
+// ✅ GET /api/admin/users?page=1&limit=10
+export const getUsersAdmin = async (req: Request, res: Response) => {
   try {
-    const users = await UserModel.find().select("-password").sort({ createdAt: -1 });
-    return res.json({ users });
+    const page = Math.max(parseInt((req.query.page as string) || "1", 10), 1);
+
+    const limitRaw = parseInt((req.query.limit as string) || "10", 10);
+    const limit = Math.min(Math.max(limitRaw, 1), 100);
+
+    const skip = (page - 1) * limit;
+
+    const [users, total] = await Promise.all([
+      UserModel.find()
+        .select("-password")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      UserModel.countDocuments(),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    return res.json({
+      users, // ✅ keep existing key so your frontend doesn’t break
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
+    });
   } catch (err: any) {
     console.log("ADMIN GET USERS ERROR =>", err);
     return res.status(500).json({ message: err?.message || "Internal Server Error" });
   }
 };
+
 
 // ✅ GET /api/admin/users/:id
 export const getUserByIdAdmin = async (req: Request, res: Response) => {

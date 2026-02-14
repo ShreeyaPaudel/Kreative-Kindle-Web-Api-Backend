@@ -11,6 +11,8 @@ const makeImageUrl = (req: Request, filename?: string) => {
   return `${baseUrl}/uploads/users/${filename}`;
 };
 
+const normalizeEmail = (email: string) => email.trim().toLowerCase();
+
 export const register = async (req: Request, res: Response) => {
   const parsed = registerDTO.safeParse(req.body);
   if (!parsed.success) {
@@ -21,16 +23,17 @@ export const register = async (req: Request, res: Response) => {
   }
 
   try {
-    const existing = await UserModel.findOne({ email: parsed.data.email });
-    if (existing) {
-      return res.status(409).json({ message: "Email already exists" });
-    }
+    const email = normalizeEmail(parsed.data.email);
+    const username = parsed.data.username?.trim();
+
+    const existing = await UserModel.findOne({ email });
+    if (existing) return res.status(409).json({ message: "Email already exists" });
 
     const hashed = await bcrypt.hash(parsed.data.password, 10);
 
     const user = await UserModel.create({
-      email: parsed.data.email,
-      username: parsed.data.username,
+      email,
+      username,
       password: hashed,
       role: parsed.data.role ?? "parent",
     });
@@ -47,10 +50,7 @@ export const register = async (req: Request, res: Response) => {
     });
   } catch (err: any) {
     console.log("REGISTER ERROR =>", err);
-
-    return res.status(500).json({
-      message: err?.message || "Internal Server Error",
-    });
+    return res.status(500).json({ message: err?.message || "Internal Server Error" });
   }
 };
 
@@ -64,11 +64,16 @@ export const login = async (req: Request, res: Response) => {
   }
 
   try {
-    const user = await UserModel.findOne({ email: parsed.data.email });
+    const email = normalizeEmail(parsed.data.email);
+
+    const user = await UserModel.findOne({ email });
     if (!user) return res.status(404).json({ message: "User not found" });
 
     const match = await bcrypt.compare(parsed.data.password, user.password);
     if (!match) return res.status(401).json({ message: "Invalid credentials" });
+
+    // 🔎 DEBUG (keep for now, remove after it works)
+    console.log("LOGIN USER =>", { id: user._id.toString(), email: user.email, role: user.role });
 
     const token = jwt.sign(
       { id: user._id, role: user.role },
@@ -101,7 +106,6 @@ export const updateUserProfile = async (req: AuthRequest, res: Response) => {
 
     if (!loggedIn) return res.status(401).json({ message: "Unauthorized" });
 
-    // ✅ user updates own profile; admin can update anyone
     if (loggedIn.id !== paramId && loggedIn.role !== "admin") {
       return res.status(403).json({ message: "Forbidden" });
     }
@@ -109,7 +113,7 @@ export const updateUserProfile = async (req: AuthRequest, res: Response) => {
     const { email, username, password } = req.body;
 
     const update: any = {};
-    if (email) update.email = email;
+    if (email) update.email = normalizeEmail(email);
     if (username) update.username = username;
 
     if (password) update.password = await bcrypt.hash(password, 10);
