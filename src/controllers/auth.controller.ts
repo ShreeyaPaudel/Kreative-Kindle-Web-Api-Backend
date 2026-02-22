@@ -183,33 +183,40 @@ export const forgotPassword = async (req: Request, res: Response) => {
 
 
 // ✅ POST /api/auth/reset-password
+// ✅ POST /api/auth/reset-password/:token
 export const resetPassword = async (req: Request, res: Response) => {
   try {
-    const { token, password } = req.body;
+    const token = req.params.token;
+    const { newPassword } = req.body;
 
-    if (!token || !password) {
-      return res.status(400).json({ message: "token and password are required" });
+    if (!token || !newPassword) {
+      return res.status(400).json({ message: "Token and newPassword are required" });
     }
 
-    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(token)
+      .digest("hex");
 
     const user = await UserModel.findOne({
       resetPasswordToken: hashedToken,
       resetPasswordExpires: { $gt: new Date() },
     });
 
-    if (!user) return res.status(400).json({ message: "Invalid or expired token" });
+    if (!user) {
+      return res.status(400).json({ message: "Invalid or expired token" });
+    }
 
-    user.password = await bcrypt.hash(password, 10);
+    user.password = await bcrypt.hash(newPassword, 10);
     user.resetPasswordToken = null as any;
     user.resetPasswordExpires = null as any;
 
     await user.save();
 
     return res.json({ message: "Password reset successful" });
+
   } catch (err: any) {
     console.log("RESET PASSWORD ERROR =>", err);
     return res.status(500).json({ message: err?.message || "Internal Server Error" });
   }
 };
-
