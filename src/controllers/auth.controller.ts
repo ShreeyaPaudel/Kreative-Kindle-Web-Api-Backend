@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 import { UserModel } from "../models/users/user.model";
 import { registerDTO, loginDTO } from "../dtos/auth.dto";
 import { AuthRequest } from "../middlewares/auth.middleware";
-
+import { sendEmail } from "../config/email";
 
 import crypto from "crypto";
 
@@ -169,12 +169,17 @@ export const forgotPassword = async (req: Request, res: Response) => {
     await user.save();
 
     // ✅ Demo link for your video/Postman (later you can send email)
-    const resetLink = `http://localhost:3000/reset-password?token=${rawToken}`;
+   const resetLink = `${process.env.CLIENT_URL}/auth/reset-password?token=${rawToken}`;
 
-    return res.json({
-      message: genericMsg,
-      resetLink,
-    });
+const html = `
+  <p>You requested a password reset.</p>
+  <p>This link expires in 15 minutes:</p>
+  <a href="${resetLink}">${resetLink}</a>
+`;
+
+await sendEmail(user.email, "Reset Your Password", html);
+
+return res.json({ message: genericMsg });
   } catch (err: any) {
     console.log("FORGOT PASSWORD ERROR =>", err);
     return res.status(500).json({ message: err?.message || "Internal Server Error" });
