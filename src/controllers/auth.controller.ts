@@ -191,13 +191,13 @@ return res.json({ message: genericMsg });
 // ✅ POST /api/auth/reset-password/:token
 export const resetPassword = async (req: Request, res: Response) => {
   try {
-    const token = req.params.token;
-    const { newPassword } = req.body;
+    const { token, password } = req.body;
 
-    if (!token || !newPassword) {
-      return res.status(400).json({ message: "Token and newPassword are required" });
+    if (!token || !password) {
+      return res.status(400).json({ message: "Token and password are required" });
     }
 
+    // Hash the token coming from frontend
     const hashedToken = crypto
       .createHash("sha256")
       .update(token)
@@ -212,7 +212,10 @@ export const resetPassword = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Invalid or expired token" });
     }
 
-    user.password = await bcrypt.hash(newPassword, 10);
+    // Update password
+    user.password = await bcrypt.hash(password, 10);
+
+    // Clear token fields (single use)
     user.resetPasswordToken = null as any;
     user.resetPasswordExpires = null as any;
 
