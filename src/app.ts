@@ -20,6 +20,9 @@ app.use(express.json());
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 app.use("/api/auth", authRoutes);
+import progressRouter from "./routes/progress.route";
+app.use("/api/progress", progressRouter);
+
 app.use("/api", uploadRoutes);
 app.use("/api/admin", adminUsersRoutes);
 
