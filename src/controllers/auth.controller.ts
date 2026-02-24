@@ -110,8 +110,9 @@ export const updateUserProfile = async (req: AuthRequest, res: Response) => {
     const loggedIn = req.user;
 
     if (!loggedIn) return res.status(401).json({ message: "Unauthorized" });
-
-    if (loggedIn.id !== paramId && loggedIn.role !== "admin") {
+// if (loggedIn.id !== paramId && loggedIn.role !== "admin") {
+    // @ts-ignore
+if (String(loggedIn._id || loggedIn.id) !== String(paramId) && loggedIn.role !== "admin") {
       return res.status(403).json({ message: "Forbidden" });
     }
 

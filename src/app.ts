@@ -6,6 +6,10 @@ import cors from "cors";
 import authRoutes from "./routes/auth.route";
 import uploadRoutes from "./routes/upload.route";
 import adminUsersRoutes from "./routes/admin/users.route";
+import progressRouter from "./routes/progress.route";
+import postRouter from "./routes/post.route";
+import passport from "./config/google.strategy";
+import googleRouter from "./routes/google.route";
 
 const app = express();
 
@@ -20,13 +24,18 @@ app.use(express.json());
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 app.use("/api/auth", authRoutes);
-import progressRouter from "./routes/progress.route";
-app.use("/api/progress", progressRouter);
 
 app.use("/api", uploadRoutes);
 app.use("/api/admin", adminUsersRoutes);
 
+app.use("/api/progress", progressRouter);
+
+app.use("/api/posts", postRouter);
+
 app.get("/", (_req, res) => res.send("Backend running"));
+
+app.use(passport.initialize());        // after cors
+app.use("/api/auth", googleRouter);    // after authRoutes
 
 export default app;
 
