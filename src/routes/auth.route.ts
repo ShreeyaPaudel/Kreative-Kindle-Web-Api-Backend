@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, RequestHandler  } from "express";
 import { register, login, updateUserProfile } from "../controllers/auth.controller";
 import { requireAuth } from "../middlewares/auth.middleware";
 import { userImageUpload } from "../middlewares/userUpload.middleware";
@@ -17,9 +17,9 @@ router.post("/reset-password", resetPassword);
 
 
 // ✅ PUT /api/auth/:id  (profile update) - Multer optional
-router.put("/:id", requireAuth, userImageUpload, updateUserProfile);
+router.put("/:id",   requireAuth as RequestHandler, userImageUpload as RequestHandler, updateUserProfile as RequestHandler);
 
 // ✅ POST /api/auth/user (Admin only) - Multer optional
-router.post("/user", requireAuth, userImageUpload, createUserViaAuthAdmin);
+router.post("/user", requireAuth as RequestHandler, userImageUpload as RequestHandler, createUserViaAuthAdmin as RequestHandler)
 
 export default router;

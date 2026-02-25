@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, RequestHandler } from "express";
 import { requireAuth } from "../middlewares/auth.middleware";
 import {
   markComplete,
@@ -11,16 +11,14 @@ import {
 
 const router = Router();
 
-// All routes protected by requireAuth (same as your auth routes)
+// — Progress —
+router.get("/",                          requireAuth as RequestHandler, getProgress as RequestHandler);
+router.post("/complete",                 requireAuth as RequestHandler, markComplete as RequestHandler);
+router.delete("/complete/:activityId",   requireAuth as RequestHandler, undoComplete as RequestHandler);
 
-// ── Progress ──────────────────────────────────────────────────────
-router.get("/",                          requireAuth, getProgress);
-router.post("/complete",                 requireAuth, markComplete);
-router.delete("/complete/:activityId",   requireAuth, undoComplete);
-
-// ── Favourites ────────────────────────────────────────────────────
-router.get("/favourites",                requireAuth, getFavourites);
-router.post("/favourites",               requireAuth, addFavourite);
-router.delete("/favourites/:activityId", requireAuth, removeFavourite);
+// — Favourites —
+router.get("/favourites",                requireAuth as RequestHandler, getFavourites as RequestHandler);
+router.post("/favourites",               requireAuth as RequestHandler, addFavourite as RequestHandler);
+router.delete("/favourites/:activityId", requireAuth as RequestHandler, removeFavourite as RequestHandler);
 
 export default router;

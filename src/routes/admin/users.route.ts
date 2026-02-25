@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { RequestHandler, Router } from "express";
 import { requireAuth } from "../../middlewares/auth.middleware";
 import { adminOnly } from "../../middlewares/admin/adminOnly.middleware";
 import { userImageUpload } from "../../middlewares/userUpload.middleware";
@@ -14,10 +14,10 @@ import {
 const router = Router();
 
 // 🔒 Protect all admin routes
-router.use(requireAuth, adminOnly);
+router.use(requireAuth as RequestHandler, adminOnly as RequestHandler);
 
 // POST /api/admin/users
-router.post("/users", userImageUpload, createUserAdmin);
+router.post("/users", userImageUpload as RequestHandler, createUserAdmin as RequestHandler);
 
 // // GET /api/admin/users
 router.get("/users", getUsersAdmin);
