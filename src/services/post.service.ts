@@ -25,11 +25,12 @@ export const createPost = async (
   return post;
 };
 
-// DELETE post — only owner can delete
-export const deletePost = async (postId: string, userId: string) => {
+// DELETE post
+// userId = null means admin (skip ownership check)
+export const deletePost = async (postId: string, userId: string | null) => {
   const post = await Post.findById(postId);
   if (!post) throw new Error("Post not found");
-  if (String(post.userId) !== String(userId)) throw new Error("Forbidden");
+  if (userId !== null && String(post.userId) !== String(userId)) throw new Error("Forbidden");
   await Post.findByIdAndDelete(postId);
 };
 

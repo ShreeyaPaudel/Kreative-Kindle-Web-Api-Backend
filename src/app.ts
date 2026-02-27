@@ -10,6 +10,7 @@ import progressRouter from "./routes/progress.route";
 import postRouter from "./routes/post.route";
 import passport from "./config/google.strategy";
 import googleRouter from "./routes/google.route";
+import activityRouter from "./routes/activity.route";
 
 const app = express();
 
@@ -34,8 +35,11 @@ app.use("/api/posts", postRouter);
 
 app.get("/", (_req, res) => res.send("Backend running"));
 
-app.use(passport.initialize());        // after cors
-app.use("/api/auth", googleRouter);    // after authRoutes
+app.use(passport.initialize());        
+app.use("/api/auth", googleRouter);    
+
+app.use("/api/activities",       activityRouter);           // public + user routes
+app.use("/api/admin/activities", activityRouter);           // admin routes (same controller, adminOnly middleware handles protection)
 
 export default app;
 

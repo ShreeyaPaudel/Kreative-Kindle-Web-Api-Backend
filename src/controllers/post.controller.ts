@@ -35,18 +35,21 @@ export const createPost = async (req: Request, res: Response) => {
   }
 };
 
-// DELETE /api/posts/:id
+// DELETE /api/posts/:id  (own posts)
+// DELETE /api/posts/admin/:id  (admin — any post)
 export const deletePost = async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
     if (!user) return res.status(401).json({ message: "Unauthorized" });
 
-    const userId = String(user._id || user.id);
+    const isAdmin = user.role === "admin";
+    const userId  = isAdmin ? null : String(user._id || user.id);
+
     await postService.deletePost(req.params.id, userId);
     return res.status(200).json({ message: "Post deleted" });
   } catch (err: any) {
-    if (err.message === "Forbidden") return res.status(403).json({ message: "Forbidden" });
-    if (err.message === "Post not found") return res.status(404).json({ message: "Post not found" });
+    if (err.message === "Forbidden")       return res.status(403).json({ message: "Forbidden" });
+    if (err.message === "Post not found")  return res.status(404).json({ message: "Post not found" });
     return res.status(500).json({ message: "Server error" });
   }
 };
