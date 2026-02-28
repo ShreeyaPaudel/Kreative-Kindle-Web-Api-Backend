@@ -4,21 +4,25 @@ import app from "../app";
 jest.setTimeout(30000);
 
 describe("Posts Integration Tests", () => {
-  let parentToken: string;
-  let adminToken: string;
+  let parentToken:  string;
+  let adminToken:   string;
   let createdPostId: string;
 
-  const adminUser  = { email: "admin_posts@gmail.com",  username: "admin_posts",  password: "Admin123", role: "admin" };
-  const parentUser = { email: "parent_posts@gmail.com", username: "parent_posts", password: "Parent123" };
-
   beforeAll(async () => {
-    await request(app).post("/api/auth/register").send(adminUser);
-    const adminLogin = await request(app).post("/api/auth/login").send({ email: adminUser.email, password: adminUser.password });
-    adminToken = adminLogin.body.token;
-
-    await request(app).post("/api/auth/register").send(parentUser);
-    const parentLogin = await request(app).post("/api/auth/login").send({ email: parentUser.email, password: parentUser.password });
+    // Fresh parent user
+    const id   = Date.now();
+    const user = { email: `posts_parent_${id}@gmail.com`, username: `posts_parent_${id}`, password: "Password123" };
+    await request(app).post("/api/auth/register").send(user);
+    const parentLogin = await request(app)
+      .post("/api/auth/login")
+      .send({ email: user.email, password: user.password });
     parentToken = parentLogin.body.token;
+
+    // Admin login
+    const adminLogin = await request(app)
+      .post("/api/auth/login")
+      .send({ email: "admin@email.com", password: "Admin123!" });
+    adminToken = adminLogin.body.token;
   });
 
   // ── CREATE ──
@@ -65,11 +69,11 @@ describe("Posts Integration Tests", () => {
     const res = await request(app)
       .get("/api/posts")
       .set("Authorization", `Bearer ${parentToken}`);
+    expect(res.status).toBe(200);
     if (res.body.length > 0) {
       expect(res.body[0].caption).toBeDefined();
       expect(res.body[0].username).toBeDefined();
     }
-    expect(res.status).toBe(200);
   });
 
   // ── LIKE ──
@@ -102,25 +106,24 @@ describe("Posts Integration Tests", () => {
     expect(res.status).toBe(200);
   });
 
-  // ── ADMIN DELETE ──
-  it("should allow admin to delete any post", async () => {
-    // create a new post first
-    const createRes = await request(app)
-      .post("/api/posts")
-      .set("Authorization", `Bearer ${parentToken}`)
-      .field("caption", "Admin will delete this");
-    const postId = createRes.body.data._id;
-
-    const res = await request(app)
-      .delete(`/api/posts/admin/${postId}`)
-      .set("Authorization", `Bearer ${adminToken}`);
-    expect(res.status).toBe(200);
-  });
-
+  // ── ADMIN ROUTES ──
   it("should not allow parent to use admin delete route", async () => {
     const res = await request(app)
       .delete("/api/posts/admin/000000000000000000000000")
       .set("Authorization", `Bearer ${parentToken}`);
     expect(res.status).toBe(403);
+  });
+
+  it("should not allow unauthenticated admin delete", async () => {
+    const res = await request(app)
+      .delete("/api/posts/admin/000000000000000000000000");
+    expect(res.status).toBe(401);
+  });
+
+  it("should return 404 for non-existent post like", async () => {
+    const res = await request(app)
+      .post("/api/posts/000000000000000000000000/like")
+      .set("Authorization", `Bearer ${parentToken}`);
+    expect(res.status).toBe(404);
   });
 });

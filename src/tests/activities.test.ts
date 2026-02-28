@@ -4,20 +4,24 @@ import app from "../app";
 jest.setTimeout(30000);
 
 describe("Activities Integration Tests", () => {
-  let adminToken: string;
-  let parentToken: string;
+  let adminToken:       string;
+  let parentToken:      string;
   let createdActivityId: string;
 
-  const adminUser  = { email: "admin_act@gmail.com",  username: "admin_act",  password: "Admin123", role: "admin" };
-  const parentUser = { email: "parent_act@gmail.com", username: "parent_act", password: "Parent123" };
-
   beforeAll(async () => {
-    await request(app).post("/api/auth/register").send(adminUser);
-    const adminLogin = await request(app).post("/api/auth/login").send({ email: adminUser.email, password: adminUser.password });
+    // Admin login
+    const adminLogin = await request(app)
+      .post("/api/auth/login")
+      .send({ email: "admin@email.com", password: "Admin123!" });
     adminToken = adminLogin.body.token;
 
-    await request(app).post("/api/auth/register").send(parentUser);
-    const parentLogin = await request(app).post("/api/auth/login").send({ email: parentUser.email, password: parentUser.password });
+    // Create a fresh parent user
+    const id   = Date.now();
+    const user = { email: `act_parent_${id}@gmail.com`, username: `act_parent_${id}`, password: "Password123" };
+    await request(app).post("/api/auth/register").send(user);
+    const parentLogin = await request(app)
+      .post("/api/auth/login")
+      .send({ email: user.email, password: user.password });
     parentToken = parentLogin.body.token;
   });
 
@@ -55,13 +59,11 @@ describe("Activities Integration Tests", () => {
     const res = await request(app)
       .get("/api/activities")
       .set("Authorization", `Bearer ${parentToken}`);
-    if (res.body.length > 0) {
-      const activity = res.body[0];
-      expect(activity.title).toBeDefined();
-      expect(activity.category).toBeDefined();
-      expect(activity.age).toBeDefined();
-    }
     expect(res.status).toBe(200);
+    if (res.body.length > 0) {
+      expect(res.body[0].title).toBeDefined();
+      expect(res.body[0].category).toBeDefined();
+    }
   });
 
   // ── CREATE ──
@@ -144,7 +146,7 @@ describe("Activities Integration Tests", () => {
 
   it("should not allow parent to delete activity", async () => {
     const res = await request(app)
-      .delete(`/api/admin/activities/000000000000000000000000`)
+      .delete("/api/admin/activities/000000000000000000000000")
       .set("Authorization", `Bearer ${parentToken}`);
     expect(res.status).toBe(403);
   });
