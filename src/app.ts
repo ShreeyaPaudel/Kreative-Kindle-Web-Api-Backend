@@ -11,6 +11,7 @@ import postRouter from "./routes/post.route";
 import passport from "./config/google.strategy";
 import googleRouter from "./routes/google.route";
 import activityRouter from "./routes/activity.route";
+import childRouter from "./routes/child.route";
 
 const app = express();
 
@@ -38,8 +39,12 @@ app.get("/", (_req, res) => res.send("Backend running"));
 app.use(passport.initialize());        
 app.use("/api/auth", googleRouter);    
 
-app.use("/api/activities",       activityRouter);           // public + user routes
-app.use("/api/admin/activities", activityRouter);           // admin routes (same controller, adminOnly middleware handles protection)
+app.use("/api/activities",       activityRouter);          
+app.use("/api/admin/activities", activityRouter);     
+
+app.use("/api/children", childRouter);
+
+
 
 export default app;
 
