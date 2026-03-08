@@ -13,13 +13,13 @@ import {
 
 const router = Router();
 
-// 🔒 Protect all admin routes
+
 router.use(requireAuth as RequestHandler, adminOnly as RequestHandler);
 
 // POST /api/admin/users
 router.post("/users", userImageUpload as RequestHandler, createUserAdmin as RequestHandler);
 
-// // GET /api/admin/users
+
 router.get("/users", getUsersAdmin);
 
 // router.get("/users", (req, res, next) => {

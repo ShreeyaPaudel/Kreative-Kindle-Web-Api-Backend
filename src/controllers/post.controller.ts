@@ -23,9 +23,11 @@ export const createPost = async (req: Request, res: Response) => {
     const userId    = String(user._id || user.id);
     const username  = user.username || "Anonymous";
     const userImage = user.image || "";
+    // Flutter sends image as JSON body field (already uploaded to /uploads/).
+    // Multer file upload is kept as a fallback for web clients.
     const imageFilename = (req as any).file
-      ? `http://localhost:3001/uploads/posts/${(req as any).file.filename}`
-      : "";
+      ? (req as any).file.filename
+      : (req.body.image ?? "");
 
     const post = await postService.createPost(userId, username, userImage, { caption }, imageFilename);
     return res.status(201).json({ message: "Post created", data: post });

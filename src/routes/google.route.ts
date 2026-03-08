@@ -1,6 +1,7 @@
 import { Router } from "express";
 import passport from "../config/google.strategy";
 import { googleCallback } from "../controllers/google.controller";
+import { mobileGoogleAuth } from "../controllers/mobile-google.controller";
 
 const router = Router();
 
@@ -16,5 +17,8 @@ router.get(
   passport.authenticate("google", { failureRedirect: "http://localhost:3000/auth/login?error=google_failed", session: false }),
   googleCallback
 );
+
+// Mobile: Flutter sends idToken from google_sign_in package → returns JWT
+router.post("/google/token", mobileGoogleAuth);
 
 export default router;

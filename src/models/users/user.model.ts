@@ -28,13 +28,13 @@ const userSchema = new mongoose.Schema(
       default: "parent",
     },
 
-    // ✅ OPTIONAL user image
+    
     image: {
       type: String,
       default: "",
     },
 
-    // ✅ Forgot / Reset Password Fields
+ 
     resetPasswordToken: {
       type: String,
       default: null,
